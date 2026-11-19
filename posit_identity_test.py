@@ -12,20 +12,27 @@ credentials = st.context.headers.get(
     "Rstudio-Connect-Credentials"
 )
 
-if credentials:
-    try:
-        user = json.loads(credentials)
+if not credentials:
+    st.error("Posit authenticated user not detected")
+    st.stop()
 
-        st.success("Authenticated Posit user detected")
+user_info = json.loads(credentials)
 
-        st.write("Username")
-        st.code(user.get("user", "Not available"))
+username = user_info.get("user", "")
+groups = user_info.get("groups", [])
 
-        # Safe diagnostic: show field names only
-        st.write("Available user fields")
-        st.write(list(user.keys()))
+st.success("Authenticated Posit user detected")
 
-    except Exception as e:
-        st.error(f"Unable to read Posit user information: {e}")
+st.subheader("Current User")
+st.write("Username:")
+st.code(username)
+
+st.subheader("Groups")
+
+if groups:
+    st.write(f"Groups detected: {len(groups)}")
+
+    for group in groups:
+        st.write(f"• {group}")
 else:
-    st.warning("Authenticated user information was not detected.")
+    st.warning("No group information returned")
