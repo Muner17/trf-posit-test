@@ -1,4 +1,4 @@
-import os
+import json
 import streamlit as st
 
 st.set_page_config(
@@ -8,45 +8,24 @@ st.set_page_config(
 
 st.title("TRF - Posit Identity Test")
 
-st.write("Checking user information provided by Posit Connect...")
+credentials = st.context.headers.get(
+    "Rstudio-Connect-Credentials"
+)
 
-possible_user_vars = [
-    "CONNECT_USER",
-    "RSTUDIO_CONNECT_USER",
-    "REMOTE_USER",
-    "USERNAME",
-    "USER",
-]
+if credentials:
+    try:
+        user = json.loads(credentials)
 
-found = False
+        st.success("Authenticated Posit user detected")
 
-for name in possible_user_vars:
-    value = os.getenv(name)
+        st.write("Username")
+        st.code(user.get("user", "Not available"))
 
-    if value:
-        st.write(f"**{name}:** {value}")
-        found = True
+        # Safe diagnostic: show field names only
+        st.write("Available user fields")
+        st.write(list(user.keys()))
 
-if not found:
-    st.warning("No Posit user environment variable detected.")
-
-st.divider()
-
-st.subheader("Safe environment check")
-
-interesting_vars = []
-
-for name, value in os.environ.items():
-    upper = name.upper()
-
-    if any(
-        keyword in upper
-        for keyword in ["CONNECT", "USER", "EMAIL", "REMOTE"]
-    ):
-        interesting_vars.append((name, value))
-
-if interesting_vars:
-    for name, value in sorted(interesting_vars):
-        st.code(f"{name} = {value}")
+    except Exception as e:
+        st.error(f"Unable to read Posit user information: {e}")
 else:
-    st.info("No relevant user variables found.")
+    st.warning("Authenticated user information was not detected.")
